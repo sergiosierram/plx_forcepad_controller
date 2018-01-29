@@ -15,17 +15,17 @@ class DAQ(object):
         self.mlz = 50.0
 
 
-    def get_forces(self,x_forces):
-        rx_force = self.NIDevice.leerS0()*self.mrxy - (self.mrxy*0.191)
-        ry_force = self.NIDevice.leerS4()*self.mrxy - (self.mrxy*0.235)
-        rz_force = self.NIDevice.leerS1()*self.mrz - 34.2
+    def get_forces(self,x_forces = False):
+        rx_force = self.NIDevice.leerS0()#*self.mrxy - (self.mrxy*0.191)
+        ry_force = self.NIDevice.leerS4()#*self.mrxy - (self.mrxy*0.235)
+        rz_force = self.NIDevice.leerS1()#*self.mrz - 34.2
 
-        lx_force = self.NIDevice.leerS5()*self.mlxy
-        ly_force = self.NIDevice.leerS2()*self.mlxy
-        lz_force = self.NIDevice.leerS6()*self.mlz + 8.4
+        lx_force = self.NIDevice.leerS5()#*self.mlxy
+        ly_force = self.NIDevice.leerS2()#*self.mlxy
+        lz_force = self.NIDevice.leerS6()#*self.mlz + 8.4
 
-        ry_force /= rz_force
-        ly_force /= lz_force
+        #ry_force /= rz_force
+        #ly_force /= lz_force
 
         if not x_forces:
             return("{0:.3f}\t{1:.3f}\t{2:.3f}\t{3:.3f}".format(ry_force,rz_force,ly_force,lz_force))
