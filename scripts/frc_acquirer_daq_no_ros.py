@@ -22,13 +22,13 @@ class FrcAcquirer():
         while not self.exitFlag:
             data = [float(i) for i in self.daq.get_forces(self.x_forces).split('\t')]
             if self.x_forces:
-                self.frc_left['x'], self.frc_left['y'], self.frc_left['z'] = data[0], data[1], data[2]
-                self.frc_right['x'], self.frc_right['y'], self.frc_right['z'] = data[3], data[4], data[5]
+                self.frc_left['x'], self.frc_left['y'], self.frc_left['z'] = data[3], data[4], data[5]
+                self.frc_right['x'], self.frc_right['y'], self.frc_right['z'] = data[0], data[1], data[2]
             else:
                 self.frc_left['x'] = 0
                 self.frc_right['x'] = 0
-                self.frc_left['y'], self.frc_left['z'] = data[0], data[1]
-                self.frc_right['y'], self.frc_right['z'] = data[2], data[3]
+                self.frc_left['y'], self.frc_left['z'] = data[2], data[3]
+                self.frc_right['y'], self.frc_right['z'] = data[0], data[1]
 
             if self.dataExport[0]:
                 t = round(time.time()-ti,2)
