@@ -15,7 +15,7 @@ class AdmittanceController(object):
 		self.aux_cmd_vel_topic = self.rospy.get_param("aux_cmd_vel_topic", "/aux_cmd_vel")
 		self.frc_topic = self.rospy.get_param("frc_topic","/linear_force")
 		self.trq_topic = self.rospy.get_param("trq_topic","/torque")
-		self.acontroller_rate = self.rospy.get_param("acontroller_rate",20)
+		self.acontroller_rate = self.rospy.get_param("acontroller_rate",20.0)
 		self.controller_params = {
 									"m": self.rospy.get_param("mass",60),
 									"b_l": self.rospy.get_param("ldamping_rario",0.5),
@@ -29,7 +29,7 @@ class AdmittanceController(object):
 		'''Publishers'''
 		self.pub_aux_cmd_vel = self.rospy.Publisher(self.aux_cmd_vel_topic, Twist, queue_size = 10)
 		'''Node Configuration'''
-		self.rospy.init_node("Admitance Controller", anonymous = True)
+		self.rospy.init_node("Admitance_Controller", anonymous = True)
 		self.rate = self.rospy.Rate(self.acontroller_rate)
 		self.vel = Twist()
 		self.frc = 0
@@ -59,7 +59,7 @@ class AdmittanceController(object):
 		return
 
 	def callback_trq(self,msg):
-		self.trq = msg.toque.y
+		self.trq = msg.torque.y
 		self.change["trq"] = True
 		return
 
@@ -69,7 +69,7 @@ class AdmittanceController(object):
 					  "trq": [],
 					  "t": np.arange(0,1,self.controller_params["Ts"])
 					}
-		while not(self.rospy.is_shutdown()) and len(in_signal_frc) < int(1/self.controller_params["Ts"]):
+		while not(self.rospy.is_shutdown()) and len(signal_in["frc"]) < int(1/self.controller_params["Ts"]):
 			if self.change["frc"]:
 				signal_in["frc"].append(self.frc)
 				self.change["frc"] = False
@@ -77,7 +77,7 @@ class AdmittanceController(object):
 				signal_in["trq"].append(self.trq)
 				self.change["trq"] = False
 			self.rate.sleep()
-		self.vel.linear.y,self.vel.angular.y = self.get_responce(self.systems, signal_in)
+		self.vel.linear.x,self.vel.angular.x = self.get_responce(self.systems, signal_in)
 		self.pub_aux_cmd_vel.publish(self.vel)
 		while not self.rospy.is_shutdown():
 			if self.change["frc"]:
