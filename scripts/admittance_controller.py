@@ -1,8 +1,7 @@
 #!/usr/bin/python
-#EXcaliberPC
 import rospy
 import numpy as np
-import scipy as sp
+#import scipy.signal as sg
 from geometry_msgs.msg import Twist,Wrench
 from std_msgs.msg import Bool
 from scipy import signal as sg
@@ -13,15 +12,15 @@ class AdmittanceController(object):
 		'''Parameters Inicialization '''
 		self.rospy = rospy
 		self.aux_cmd_vel_topic = self.rospy.get_param("aux_cmd_vel_topic", "/aux_cmd_vel")
-		self.frc_topic = self.rospy.get_param("frc_topic","/linear_force")
+		self.frc_topic = self.rospy.get_param("frc_topic","/linear_frc")
 		self.trq_topic = self.rospy.get_param("trq_topic","/torque")
-		self.acontroller_rate = self.rospy.get_param("acontroller_rate",20.0)
+		self.acontroller_rate = self.rospy.get_param("acontroller_rate",50)
 		self.controller_params = {
-									"m": self.rospy.get_param("mass",60),
-									"b_l": self.rospy.get_param("ldamping_rario",0.5),
-									"j": self.rospy.get_param("inertia",60),
-									"b_a": self.rospy.get_param("adamping_rario",0.5),
-									"Ts": self.rospy.get_param("Ts",1/self.acontroller_rate)
+									"m": self.rospy.get_param("mass",10),
+									"b_l": self.rospy.get_param("ldaming_ratio",0.5),
+									"j": self.rospy.get_param("inertia",1),
+									"b_a": self.rospy.get_param("adamping_ratio",0.5),
+									"Ts": self.rospy.get_param("Ts",1.0/self.acontroller_rate)
 								 }
 		'''Subscribers'''
 		self.sub_frc = self.rospy.Subscriber(self.frc_topic, Wrench,self.callback_frc)
@@ -42,16 +41,14 @@ class AdmittanceController(object):
 						  "linear": sg.TransferFunction(lnum,lden,dt = self.controller_params["Ts"]/2),
 						  "angular": sg.TransferFunction(anum,aden,dt = self.controller_params["Ts"]/2)
 					   }
-		self.change = {
-					   "frc": False,
-					   "trq": False
-					  }
+		self.change = {"frc": False,
+					   "trq": False}
 		self.main_controller()
 
 	def get_responce(self,systems,signal_in):
-		signal_out["linear"] = sg.dlsim(systems["linear"],signal_in["frc"])#,signal_in["t"])
-		signal_out["angular"] = sg.dlsim(systems["angular"],signal_in["trq"])#,signal_in["t"])
-		return signal_out["linear"][-1],signal_out["angular"][-1]
+		signal_out = {"linear": sg.dlsim(systems["linear"],signal_in["frc"]),#,signal_in["t"]),
+					  "angular": sg.dlsim(systems["angular"],signal_in["trq"])}#,signal_in["t"])
+		return signal_out["linear"][1][-1],signal_out["angular"][1][-1]
 
 	def callback_frc(self,msg):
 		self.frc = msg.force.y
@@ -64,12 +61,11 @@ class AdmittanceController(object):
 		return
 
 	def main_controller(self):
-		signal_in = {
-					  "frc": [],
+		signal_in = { "frc": [],
 					  "trq": [],
-					  "t": np.arange(0,1,self.controller_params["Ts"])
-					}
-		while not(self.rospy.is_shutdown()) and len(signal_in["frc"]) < int(1/self.controller_params["Ts"]):
+					  "t": np.arange(0,1,self.controller_params["Ts"])}
+		min_len = int(.1/self.controller_params["Ts"])
+		while not(self.rospy.is_shutdown()) and len(signal_in["frc"]) < min_len:
 			if self.change["frc"]:
 				signal_in["frc"].append(self.frc)
 				self.change["frc"] = False
@@ -78,7 +74,9 @@ class AdmittanceController(object):
 				self.change["trq"] = False
 			self.rate.sleep()
 		self.vel.linear.x,self.vel.angular.x = self.get_responce(self.systems, signal_in)
+		self.vel.linear.y,self.vel.angular.y = self.vel.linear.x,self.vel.angular.x
 		self.pub_aux_cmd_vel.publish(self.vel)
+		print('s')
 		while not self.rospy.is_shutdown():
 			if self.change["frc"]:
 				signal_in["frc"].pop(0)
@@ -87,7 +85,9 @@ class AdmittanceController(object):
 				signal_in["trq"].pop(0)
 				signal_in["trq"].append(self.frc)
 			if self.change["frc"] and self.change["trq"]:
+				print('p')
 				self.vel.linear.y,self.vel.angular.y = self.get_responce(self.systems, signal_in)
+				self.vel.linear.x,self.vel.angular.x = self.vel.linear.y,self.vel.angular.y
 				self.pub_aux_cmd_vel.publish(self.vel)
 				self.change["frc"] = False
 				self.change["trq"] = False
