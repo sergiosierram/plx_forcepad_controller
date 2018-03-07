@@ -37,17 +37,18 @@ class FrcAcquirer(object):
             			   "fn": 5,
             			   "Wn": 2*self.filter["fn"]/self.fs,
             			   "a": [],
-            			   "b": [] }
+            			   "b": [],
+                           "padlen": 0}
             a,b = signal.butter(self.filter["N"],self.filter["Wn"])
             self.filter["a"],self.filter["b"] = a,b
-            print('filter')
+            self.filter["padlen"] = 3*max(len(self.filter["a"]),len(self.filter["b"]))
         self.rate = self.rospy.Rate(self.acontroller_rate)
         self.rospy.init_node(self.frc_acquirer_rate, anonymous = True)
 
     def wait_for_exit(self):
         print("Press Enter for exit: ")
         x = stdin.readline().strip()
-        self.exitFlag = True
+        self.exitFlag = Truedata = [float(i) for i in self.daq.get_forces(self.x_forces).split('\t')]
 
     def publish_data(self,data):
         self.frc_left.force.x = 0
@@ -60,18 +61,28 @@ class FrcAcquirer(object):
         self.l_frc.force.x = 0
         self.l_frc.force.y = float(data[-1][0])+float(data[-1][2])
         self.l_frc.force.z = float(data[-1][1])+float(data[-1][3])
-
         self.pub_left.publish(self.frc_left)
         self.pub_right.publish(self.frc_right)
         self.pub_trq.publish(self.trq)
         self.pub_lfrc.publish(self.l_frc)
 
-    def acquire(self):
+    def acquire(self):data = [float(i) for i in self.daq.get_forces(self.x_forces).split('\t')]
 		buff = []
+        while not rospy.is_shutdown() and self.filt_signals:
+            buff.append([float(i) for i in self.daq.get_forces(self.x_forces).split('\t')])
+            if len(buff) <= self.filter["padlen"]:
+                breakdata = [float(i) for i in self.daq.get_forces(self.x_forces).split('\t')]
 		while not self.exitFlag and not rospy.is_shutdown():
 			data = [float(i) for i in self.daq.get_forces(self.x_forces).split('\t')]
-
-
+            if self.filt_signals:
+                buff.pop(0)
+                buff.append(data)
+                buff_filt = signal.filtfilt(b,a,buff,axis=0)
+                self.publish_data(buff_filt)
+            else:
+                buff.append(data)
+                self.publish_data(buff)
+                buff = []
 			self.rate.sleep()
 		print("Exiting ...")
 		self.daq.close_port()

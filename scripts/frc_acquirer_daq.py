@@ -130,7 +130,7 @@ class FrcAcquirer():
 	    for z in range(0,len(self.W_WLFC)):
 	        harmonics.append(self.W_WLFC[z] * X[z])
 
-	    
+
 	    suma = 0
 	    for z in range(0,len(harmonics)):
 	        suma =  suma + harmonics[z]
