@@ -85,9 +85,67 @@ class FrcAcquirer():
 				f.close()
 				self.exitFlag = True
 			self.rate.sleep()
-		
 
-		
+
+	def wflc (senal, mu_0, mu_1, mu_b, M):
+
+	    global self.sum_omega_0,self.W_WLFC,self.Cadence_WFLC_LRF,omega_0
+
+	    T =1/10
+	    X=[]
+
+	    for j in range (0,M):
+	        X.append(math.sin((j+1)*self.sum_omega_0))
+	        X.append(math.cos((j+1)*self.sum_omega_0))
+
+	    MUL_XW=0
+	    for z in range (0,len(self.W_WLFC)):
+	        MUL_XW= MUL_XW + X[z]* self.W_WLFC[z]
+
+	    error = senal - MUL_XW - mu_b
+
+
+	    sum_rec = 0
+	    for j in range (0,M):
+	        sum_rec = sum_rec + (j+1)*(self.W_WLFC[j]*X[M+j] - self.W_WLFC[M+j]*X[j])
+
+	    omega_0_pred = abs(self.omega_0 + 2*mu_0*error*sum_rec)
+
+	    W_pred = []
+	    for z in range(0,len(self.W_WLFC)):
+	        W_pred.append(self.W_WLFC[z] + 2*mu_1*X[z]*error)
+
+	    #omega_0.append(omega_0_pred)
+
+
+	    self.W_WLFC=[]
+	    for z in range(0,len(W_pred)):
+	        self.W_WLFC.append(W_pred[z])
+
+	    self.sum_omega_0    = self.sum_omega_0 + omega_0_pred;
+	    #sum_pend = abs(((self.sum_omega_0 - self.sum_omega_0_ant))*57.29578)
+
+
+	    harmonics = []
+	    for z in range(0,len(self.W_WLFC)):
+	        harmonics.append(self.W_WLFC[z] * X[z])
+
+	    
+	    suma = 0
+	    for z in range(0,len(harmonics)):
+	        suma =  suma + harmonics[z]
+
+	    tremor = suma
+
+	    omega_0_Hz = (omega_0_pred/(2*np.pi)/T)
+	    self.omega_0 = omega_0_pred
+	    self.Cadence_WFLC_LRF.append(omega_0_Hz)
+	    W_WFLC_plot.append( (self.W_WLFC[0]**2 + self.W_WLFC[1]**2)**(0.5)*600 )
+
+	    Reg_cadence.append(omega_0_Hz)
+	    Reg_Amplit.append((self.W_WLFC[0]**2 + self.W_WLFC[1]**2)**(0.5)*600 )
+	    Reg_LDD.append(senal*600)
+
 
 if __name__ == '__main__':
 	try:
