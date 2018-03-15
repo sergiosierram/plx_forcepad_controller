@@ -6,7 +6,7 @@ from scipy.signal import butter, lfilter
 from threading import Thread
 from geometry_msgs.msg import Wrench
 from sys import stdin
-from daq_controller.DAQ import DAQ
+from include.daq_controller.DAQ import DAQ
 
 class FrcAcquirer():
 	def __init__(self):

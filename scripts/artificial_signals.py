@@ -9,14 +9,14 @@ if __name__ == '__main__':
 		pub_right = rospy.Publisher('/frc_right', Wrench, queue_size = 10)
 		frc_left = Wrench()
 		frc_right = Wrench()
-		fs = 1000
+		fs = 100
 		rospy.init_node('artificial_signals', anonymous = True)
 		rate = rospy.Rate(fs)
 		ti = rospy.get_time()
 		while not rospy.is_shutdown():
 			t = rospy.get_time()-ti
-			frc_left.force.z = frc_right.force.z =  np.sin(2*np.pi*0.56465*t)
-			frc_left.force.y = frc_right.force.y =  np.sin(2*np.pi*0.56465*t) + np.sin(2*np.pi*10*t)
+			frc_left.force.z = frc_right.force.z =  np.sin(2*np.pi*3*t)
+			frc_left.force.y = frc_right.force.y =  np.sin(2*np.pi*1*t) + np.sin(2*np.pi*10*t+np.pi/2)
 			pub_left.publish(frc_left)
 			pub_right.publish(frc_right)
 			rate.sleep()
