@@ -15,7 +15,7 @@ if __name__ == '__main__':
 		ti = rospy.get_time()
 		while not rospy.is_shutdown():
 			t = rospy.get_time()-ti
-			frc_left.force.z = frc_right.force.z =  np.sin(2*np.pi*3*t)
+			frc_left.force.z = frc_right.force.z =  np.sin(2*np.pi*1*t)
 			frc_left.force.y = frc_right.force.y =  np.sin(2*np.pi*1*t) + np.sin(2*np.pi*10*t+np.pi/2)
 			pub_left.publish(frc_left)
 			pub_right.publish(frc_right)

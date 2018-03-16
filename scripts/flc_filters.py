@@ -12,26 +12,27 @@ class FLCFilters(object):
 		self.frc_left_topic = self.rospy.get_param("frc_left","/frc_left")
 		self.frc_right_topic = self.rospy.get_param("frc_right","/frc_right")
 		self.wflc_params = {"M": self.rospy.get_param("wflc_order",1),
-			"mu": self.rospy.get_param("wflc_amplitude_a_g",0.5),
-			"mu0": self.rospy.get_param("wflc_frequency_a_g",0.0001),
+			"mu": self.rospy.get_param("wflc_amplitude_a_g",0.05),
+			"mu0": self.rospy.get_param("wflc_frequency_a_g",0.005),
 			"mub": self.rospy.get_param("wflc_bias_a_g",0.05),
 			"sum_w0": 0,
-			"w0": 1,
+			"w0": np.random.rand(1),
 			"X": [],
 			"W": [],
-			"Wb": 0}
+			"Wb": 0,
+			"fs": 100}
 		self.r_flc_params = {"M": self.rospy.get_param("r_flc_order",1),
 		     "mu": self.rospy.get_param("r_flc_amplitude_a_g",0.008),
 		     "X": [],
 		     "W": [],
-			 "w0": 2*np.pi,
+			 "w0": 2*np.pi*np.random.rand(1),
 			 "k": 1,
 			 "fs": 100}
 		self.l_flc_params = {"M": self.rospy.get_param("l_flc_order",1),
 		   	 "mu": self.rospy.get_param("l_flc_amplitude_a_g",0.008),
 		   	 "X": [],
 		   	 "W": [],
-			 "w0": 2*np.pi,
+			 "w0": 2*np.pi*np.random.rand(1),
 			 "k": 1,
 			 "fs": 100}
 		'''Subscribers'''
@@ -72,63 +73,23 @@ class FLCFilters(object):
 		fz = self.frc_left.force.z + self.frc_right.force.z
 		tremor,self.wflc_params = wflc(fz,self.wflc_params)
 #		print(self.wflc_params["w0"])
-		"""
+		self.l_flc_params["w0"] = self.wflc_params["w0"]*self.wflc_params["fs"]
+		self.r_flc_params["w0"] = self.wflc_params["w0"]*self.wflc_params["fs"]
 		left_tremor,self.l_flc_params = flc(self.frc_left.force.y,self.l_flc_params)
 		right_tremor,self.r_flc_params = flc(self.frc_left.force.y,self.r_flc_params)
 		"""
-		"""self.frc.force.y = left_tremor"""
+		self.frc.force.x = self.wflc_params["w0"]
 		self.frc.force.y = tremor
 		self.frc.force.z = fz
 		"""
 		self.frc_left.force.y = self.frc_left.force.y - left_tremor
 		self.frc_right.force.y = self.frc_right.force.y - right_tremor
 		self.frc.force.y = self.frc_left.force.y# + self.frc_right.force.y
-		self.frc.torque.y = self.frc_left.force.y - self.frc_right.force.y"""
+		self.frc.force.x = self.frc_right.force.y#self.frc_left.force.y - self.frc_right.force.y
 		self.pub_frc.publish(self.frc)
 		self.change["left"] = False
 		self.change["right"] = False
 
-"""
-	def wflc(self,signal):
-		self.wflc_params["X"] = []
-		for r in range (0,self.wflc_params["M"]):
-			self.wflc_params["X"].append(np.sin((r+1)*self.wflc_params["sum_w0"]))
-			self.wflc_params["X"].append(np.cos((r+1)*self.wflc_params["sum_w0"]))
-
-		y = np.dot(self.wflc_params["W"],self.wflc_params["X"])
-		error = signal - y - self.wflc_params["Wb"]
-
-		delta = 0
-		for r in range (0,self.wflc_params["M"]):
-			t1 = self.wflc_params["W"][r]*self.wflc_params["X"][self.wflc_params["M"]+r]
-			t2 = self.wflc_params["W"][self.wflc_params["M"]+r]*self.wflc_params["X"][r]
-			delta += (r+1)*(t1-t2)
-
-		self.wflc_params["w0"] += 2*self.wflc_params["mu0"]*error*delta
-		self.wflc_params["w0"] = abs(self.wflc_params["w0"])
-		self.wflc_params["sum_w0"] += self.wflc_params["w0"]
-		self.wflc_params["W"] += 2*self.wflc_params["mu"]*error*np.array(self.wflc_params["X"])
-		self.wflc_params["Wb"] += 2*self.wflc_params["mub"]*error
-
-		tremor = np.dot(self.wflc_params["W"],self.wflc_params["X"])
-		#f0 = (self.wflc_params["w0"]/(2*np.pi)
-		return self.wflc_params["w0"],tremor
-
-	def flc(self,signal,w0,params):
-		params["X"] = []
-		for r in range (0,params["M"]):
-			params["X"].append(np.sin((r+1)*w0))
-			params["X"].append(np.cos((r+1)*w0))
-
-		y = np.dot(params["W"],params["X"])
-		error = signal - y
-
-		params["W"] += 2*params["mu"]*error*np.array(params["X"])
-
-		tremor = np.dot(params["W"],params["X"])
-
-		return tremor,params
-"""
 if __name__ == '__main__':
 	try:
 		flc_filters = FLCFilters()

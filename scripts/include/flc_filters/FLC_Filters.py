@@ -8,22 +8,19 @@ def wflc(signal,params):
 
     y = np.dot(params["W"],params["X"])
     error = signal - y - params["Wb"]
-    #print('error',error)
     delta = 0
     i = 0
     for r in range (params["M"]):
-        i += 1
-        print(i)
         t1 = params["W"][r]*params["X"][params["M"]+r]
         t2 = params["W"][params["M"]+r]*params["X"][r]
         delta += (r+1)*(t1-t2)
-    print('delta',delta)
+    #print('error',error,'delta',delta)
     params["w0"] += 2*params["mu0"]*error*delta
     params["w0"] = abs(params["w0"])
     params["sum_w0"] += params["w0"]
     params["W"] += 2*params["mu"]*error*params["X"]
     #params["Wb"] += 2*params["mub"]*error
-
+    #print(params["w0"]*params["fs"])
     tremor = np.dot(params["W"],params["X"]) + params["Wb"]
     return tremor,params
 
