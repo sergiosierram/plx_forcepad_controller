@@ -17,7 +17,7 @@ class AdmittanceController(object):
 		#self.trq_topic = self.rospy.get_param("trq_topic","/torque")
 		self.acontroller_rate = self.rospy.get_param("acontroller_rate",6)
 		self.controller_params = {
-					"m": self.rospy.get_param("mass",15),
+					"m": self.rospy.get_param("mass",20),
 					"b_l": self.rospy.get_param("ldaming_ratio",5),
 					"j": self.rospy.get_param("inertia",5),
 					"b_a": self.rospy.get_param("adamping_ratio",4),
